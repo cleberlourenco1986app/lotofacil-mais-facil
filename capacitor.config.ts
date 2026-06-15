@@ -1,1 +1,92 @@
-:root{--bg:#07111f;--card:#111c2f;--card2:#17243a;--txt:#eef6ff;--muted:#9fb0c8;--brand:#34d399;--brand2:#38bdf8;--danger:#fb7185;--line:rgba(255,255,255,.1);--shadow:0 20px 60px rgba(0,0,0,.35)}*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:radial-gradient(circle at top left,#164e63 0,#07111f 38%,#04070d 100%);color:var(--txt)}.shell{width:min(1120px,100%);margin:auto;padding:18px}.hero{display:flex;justify-content:space-between;gap:16px;align-items:center;background:linear-gradient(135deg,rgba(52,211,153,.18),rgba(56,189,248,.12));border:1px solid var(--line);border-radius:28px;padding:24px;box-shadow:var(--shadow)}.eyebrow{text-transform:uppercase;letter-spacing:.18em;color:var(--brand);font-size:12px;font-weight:700;margin:0 0 6px}.hero h1{font-size:clamp(32px,7vw,58px);line-height:.95;margin:0}.hero p{color:var(--muted);max-width:620px}.status-card,.card{background:rgba(17,28,47,.88);border:1px solid var(--line);border-radius:22px;padding:18px;margin-top:16px;box-shadow:0 12px 36px rgba(0,0,0,.2);backdrop-filter:blur(10px)}.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:16px 0}.tab,button{border:0;border-radius:16px;padding:13px 16px;background:linear-gradient(135deg,var(--brand),#22c55e);color:#032014;font-weight:800;cursor:pointer}.tab{background:var(--card2);color:var(--muted);border:1px solid var(--line)}.tab.active{background:linear-gradient(135deg,var(--brand2),var(--brand));color:#031827}.ghost,.secondary{background:rgba(255,255,255,.09);color:var(--txt);border:1px solid var(--line)}.danger{background:rgba(251,113,133,.16);color:#fecdd3;border:1px solid rgba(251,113,133,.35)}.panel{display:none}.panel.active{display:block}.row{display:flex;gap:10px;align-items:center}.wrap{flex-wrap:wrap}.topgap{margin-top:18px}input{background:#07111f;color:var(--txt);border:1px solid var(--line);border-radius:14px;padding:13px 14px;min-width:130px}h2{margin:0 0 12px}h3{margin:18px 0 10px}.hint,.muted{color:var(--muted)}.number-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.ball{width:100%;aspect-ratio:1;border-radius:999px;display:grid;place-items:center;font-weight:900;background:#22304a;color:#d9e8ff;border:1px solid var(--line);box-shadow:inset 0 -10px 20px rgba(0,0,0,.18)}.ball.drawn{background:linear-gradient(135deg,#34d399,#16a34a);color:#022c22;box-shadow:0 0 0 4px rgba(52,211,153,.15)}.ball.fixed{background:linear-gradient(135deg,#38bdf8,#2563eb);color:white}.ball.out{background:linear-gradient(135deg,#fb7185,#be123c);color:white}.ball.hit{background:linear-gradient(135deg,#facc15,#f97316);color:#281400}.mini-grid{display:grid;grid-template-columns:repeat(5,42px);gap:7px;margin:12px 0}.mini-grid .ball{font-size:13px}.result-card{background:var(--card2);border:1px solid var(--line);border-radius:18px;padding:14px;margin:12px 0}.list{display:grid;gap:12px}.game{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.04);margin:8px 0}.game-main{flex:1}.badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.badge{padding:5px 8px;border-radius:999px;background:rgba(255,255,255,.08);color:var(--muted);font-size:12px}.hidden{display:none}.ranking{display:grid;gap:8px;margin-top:12px}.rank-row{display:grid;grid-template-columns:52px 1fr 70px;gap:10px;align-items:center}.bar{height:10px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}.bar span{display:block;height:100%;background:linear-gradient(90deg,var(--brand2),var(--brand))}@media(max-width:680px){.shell{padding:12px}.hero{border-radius:22px;align-items:flex-start;flex-direction:column}.tabs{grid-template-columns:repeat(2,1fr);position:sticky;top:0;z-index:5;background:rgba(7,17,31,.85);backdrop-filter:blur(10px);padding:8px;border-radius:18px}.card{padding:14px}.mini-grid{grid-template-columns:repeat(5,1fr)}.game{align-items:stretch;flex-direction:column}.row input{width:100%}.row button{flex:1}.number-grid{gap:8px}}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lotofácil + Fácil</title>
+  <link rel="stylesheet" href="static/style.css" />
+</head>
+<body>
+  <div class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Gerador inteligente</p>
+        <h1>Lotofácil + Fácil</h1>
+        <p>Resultados coloridos, filtros, geração de jogos e conferência direto no celular.</p>
+      </div>
+      <button class="ghost" onclick="atualizarStatus()">Atualizar</button>
+    </header>
+
+    <section id="status" class="status-card">Carregando histórico...</section>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="resultados">Resultados</button>
+      <button class="tab" data-tab="gerar">Gerar</button>
+      <button class="tab" data-tab="salvos">Salvos</button>
+      <button class="tab" data-tab="ranking">Ranking</button>
+    </nav>
+
+    <main>
+      <section class="panel active" id="tab-resultados">
+        <div class="card">
+          <h2>Resultado do sorteio</h2>
+          <div class="row wrap">
+            <button onclick="carregarUltimo()">Ver último</button>
+            <input id="concursoBusca" type="number" placeholder="Concurso" />
+            <button class="secondary" onclick="buscarConcurso()">Buscar</button>
+          </div>
+          <div id="resultadoAtual" class="result-box"></div>
+        </div>
+        <div class="card">
+          <h2>Últimos resultados</h2>
+          <div class="row">
+            <input id="qtdUltimos" type="number" value="5" min="1" max="100" />
+            <button onclick="carregarUltimos()">Listar</button>
+          </div>
+          <div id="ultimosResultados" class="list"></div>
+        </div>
+      </section>
+
+      <section class="panel" id="tab-gerar">
+        <div class="card">
+          <h2>Montar matriz</h2>
+          <p class="hint">Escolha de 2 a 6 fixos e de 2 a 6 eliminados. Clique nas dezenas para selecionar.</p>
+          <h3>Fixos <span id="countFixos">0</span>/6</h3>
+          <div id="gridFixos" class="number-grid"></div>
+          <h3>Eliminados <span id="countEliminados">0</span>/6</h3>
+          <div id="gridEliminados" class="number-grid"></div>
+          <div class="row wrap topgap">
+            <label>Quantidade de jogos</label>
+            <input id="quantidadeJogos" type="number" value="20" min="1" max="5000" />
+            <button onclick="gerarJogos()">Gerar jogos</button>
+          </div>
+        </div>
+        <div id="resumoGeracao" class="card hidden"></div>
+        <div id="jogosGerados" class="card hidden"></div>
+      </section>
+
+      <section class="panel" id="tab-salvos">
+        <div class="card">
+          <h2>Jogos salvos</h2>
+          <div class="row wrap">
+            <input id="concursoConferencia" type="number" placeholder="Concurso para conferir" />
+            <button onclick="conferirSalvos()">Conferir</button>
+            <button class="danger" onclick="limparSalvos()">Limpar salvos</button>
+          </div>
+          <div id="salvosArea" class="list"></div>
+        </div>
+      </section>
+
+      <section class="panel" id="tab-ranking">
+        <div class="card">
+          <h2>Dezenas mais sorteadas</h2>
+          <button onclick="carregarRanking()">Carregar ranking</button>
+          <div id="rankingArea" class="ranking"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="config.js"></script>
+  <script src="static/app.js"></script>
+</body>
+</html>

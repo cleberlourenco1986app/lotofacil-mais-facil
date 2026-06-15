@@ -1,18 +1,23 @@
-{
-  "name": "lotofacil-mais-facil-mobile",
-  "version": "1.0.0",
-  "description": "App mobile Lotofacil + Facil",
-  "private": true,
-  "scripts": {
-    "cap:add:android": "npx cap add android",
-    "cap:sync": "npx cap sync android",
-    "cap:open": "npx cap open android",
-    "android": "npm run cap:add:android && npm run cap:sync && npm run cap:open"
-  },
-  "dependencies": {
-    "@capacitor/android": "latest",
-    "@capacitor/cli": "latest",
-    "@capacitor/core": "latest"
-  },
-  "devDependencies": {}
-}
+POLITICA DE PRIVACIDADE - MODELO
+
+Ultima atualizacao: [coloque a data]
+
+O aplicativo Lotofacil + Facil e uma ferramenta independente para consulta de resultados, organizacao, geracao estatistica e conferencia de jogos da Lotofacil.
+
+1. Dados coletados
+O aplicativo pode armazenar localmente, no proprio aparelho do usuario, jogos salvos para conferencia futura. Esses dados nao sao vendidos.
+
+2. Resultados e historico
+Os resultados de concursos sao consultados em fontes publicas disponiveis na internet.
+
+3. Pagamentos
+Caso haja versao premium, as compras e assinaturas devem ser processadas pela Google Play ou App Store, conforme a plataforma.
+
+4. Nao afiliacao
+Este aplicativo nao e oficial, nao representa a Caixa Economica Federal e nao realiza apostas.
+
+5. Isencao sobre resultados
+O aplicativo nao garante premios, ganhos ou acertos. Sorteios sao aleatorios.
+
+6. Contato
+Para duvidas sobre privacidade, entre em contato: [seu email]

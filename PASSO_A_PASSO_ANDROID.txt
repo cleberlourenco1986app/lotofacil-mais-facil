@@ -1,16 +1,29 @@
-import type { CapacitorConfig } from '@capacitor/cli';
+NOME DO APP
+Lotofacil + Facil
 
-const config: CapacitorConfig = {
-  appId: 'br.com.lotofacilmaisfacil.app',
-  appName: 'Lotofacil + Facil',
-  webDir: 'www',
-  bundledWebRuntime: false,
-  android: {
-    allowMixedContent: false
-  },
-  server: {
-    androidScheme: 'https'
-  }
-};
+DESCRICAO CURTA
+Resultados, matriz estatistica e conferencia de jogos da Lotofacil.
 
-export default config;
+DESCRICAO COMPLETA
+Lotofacil + Facil e uma ferramenta independente para quem deseja acompanhar resultados, organizar jogos, conferir apostas salvas e criar matrizes estatisticas da Lotofacil.
+
+Recursos:
+- Consulta de resultado do ultimo concurso
+- Busca por concurso
+- Ultimos resultados com numeros coloridos
+- Ranking das dezenas mais sorteadas
+- Geracao de jogos com dezenas fixas e eliminadas
+- Filtro de sequencias maiores que 4 numeros
+- Filtro contra combinacoes que ja fariam 14 ou 15 pontos no historico
+- Salvamento de jogos no aparelho
+- Conferencia de jogos salvos
+- Exportacao de jogos
+
+Aviso importante:
+Este aplicativo nao realiza apostas, nao vende bolao, nao garante premios e nao possui vinculo com a Caixa Economica Federal. Trata-se de uma ferramenta estatistica, organizacional e informativa.
+
+CATEGORIA SUGERIDA
+Ferramentas ou Entretenimento
+
+PALAVRAS-CHAVE
+lotofacil, resultados, conferencia, matriz, jogos, estatistica
