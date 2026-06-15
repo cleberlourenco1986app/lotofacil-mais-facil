@@ -4,33 +4,148 @@ from itertools import combinations
 from collections import Counter
 from math import comb
 import requests
+import time
 
 app = Flask(__name__)
 CORS(app)
 
 TODAS_DEZENAS = set(range(1, 26))
+
 URL_CAIXA = "https://servicebus2.caixa.gov.br/portaldeloterias/api/lotofacil"
+URL_GUIDI_BASE = "https://api.guidi.dev.br/loteria/lotofacil"
+
+CACHE_HISTORICO = None
+CACHE_CRIADO_EM = 0
+CACHE_TTL_SEGUNDOS = 60 * 60 * 6
 
 
 def formatar_dezenas(dezenas):
     return [str(int(n)).zfill(2) for n in dezenas]
 
 
-def baixar_concurso(numero=None):
-    url = URL_CAIXA if numero is None else f"{URL_CAIXA}/{numero}"
-    headers = {"User-Agent": "Mozilla/5.0"}
-    resposta = requests.get(url, headers=headers, timeout=25)
-    resposta.raise_for_status()
-    dados = resposta.json()
+def normalizar_dezenas(valor):
+    if not valor:
+        return []
+
+    dezenas = []
+    for item in valor:
+        try:
+            numero = int(item)
+            if 1 <= numero <= 25:
+                dezenas.append(numero)
+        except Exception:
+            pass
+
+    dezenas = sorted(set(dezenas))
+    if len(dezenas) == 15:
+        return dezenas
+
+    return []
+
+
+def extrair_resultado(dados):
+    if not isinstance(dados, dict):
+        raise ValueError("Resposta da API em formato inesperado.")
+
+    concurso = (
+        dados.get("numero")
+        or dados.get("concurso")
+        or dados.get("numeroConcurso")
+        or dados.get("id")
+    )
+
+    data = (
+        dados.get("dataApuracao")
+        or dados.get("data")
+        or dados.get("dataSorteio")
+        or dados.get("data_concurso")
+        or ""
+    )
+
+    possiveis_chaves_dezenas = [
+        "listaDezenas",
+        "dezenas",
+        "numeros",
+        "resultado",
+        "dezenasSorteadasOrdemSorteio",
+        "dezenasSorteadas",
+    ]
+
+    dezenas = []
+    for chave in possiveis_chaves_dezenas:
+        if chave in dados:
+            dezenas = normalizar_dezenas(dados.get(chave))
+            if dezenas:
+                break
+
+    if not dezenas:
+        for valor in dados.values():
+            if isinstance(valor, list):
+                dezenas = normalizar_dezenas(valor)
+                if dezenas:
+                    break
+
+    if not concurso or not dezenas:
+        raise ValueError("Nao consegui identificar concurso ou dezenas na resposta da API.")
 
     return {
-        "concurso": dados.get("numero"),
-        "data": dados.get("dataApuracao"),
-        "dezenas": [int(d) for d in dados.get("listaDezenas", [])]
+        "concurso": int(concurso),
+        "data": data,
+        "dezenas": dezenas
     }
 
 
+def get_json(url):
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "application/json,text/plain,*/*",
+        "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+        "Referer": "https://loterias.caixa.gov.br/"
+    }
+
+    resposta = requests.get(url, headers=headers, timeout=30)
+    resposta.raise_for_status()
+    return resposta.json()
+
+
+def baixar_concurso_caixa(numero=None):
+    url = URL_CAIXA if numero is None else f"{URL_CAIXA}/{numero}"
+    dados = get_json(url)
+    return extrair_resultado(dados)
+
+
+def baixar_concurso_guidi(numero=None):
+    sufixo = "ultimo" if numero is None else str(numero)
+    url = f"{URL_GUIDI_BASE}/{sufixo}"
+    dados = get_json(url)
+    return extrair_resultado(dados)
+
+
+def baixar_concurso(numero=None):
+    erros = []
+
+    for nome, funcao in [
+        ("caixa", baixar_concurso_caixa),
+        ("guidi", baixar_concurso_guidi),
+    ]:
+        try:
+            resultado = funcao(numero)
+            resultado["fonte"] = nome
+            return resultado
+        except Exception as erro:
+            erros.append(f"{nome}: {erro}")
+
+    raise RuntimeError("Nao foi possivel carregar o concurso. Erros: " + " | ".join(erros))
+
+
 def carregar_historico():
+    global CACHE_HISTORICO, CACHE_CRIADO_EM
+
+    agora = time.time()
+
+    if CACHE_HISTORICO is not None and (agora - CACHE_CRIADO_EM) < CACHE_TTL_SEGUNDOS:
+        return CACHE_HISTORICO
+
     ultimo = baixar_concurso()
     ultimo_numero = int(ultimo["concurso"])
 
@@ -43,6 +158,9 @@ def carregar_historico():
                 historico.append(item)
         except Exception:
             continue
+
+    CACHE_HISTORICO = historico
+    CACHE_CRIADO_EM = agora
 
     return historico
 
@@ -99,6 +217,7 @@ def inicio():
         "app": "Lotofacil + Facil",
         "status": "online",
         "mensagem": "Backend funcionando corretamente.",
+        "observacao": "Usa fonte alternativa quando a API da Caixa bloqueia o servidor.",
         "rotas": [
             "/api/ultimo",
             "/api/concurso/3000",

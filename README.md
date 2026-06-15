@@ -1,6 +1,10 @@
 # Lotofacil + Facil - Backend Render
 
-Este pacote esta pronto para subir no GitHub e publicar no Render.
+Versao corrigida para o erro 403 da Caixa no Render.
+
+O backend tenta consultar a API da Caixa primeiro.
+Se a Caixa bloquear o servidor com 403, ele usa a API alternativa:
+https://api.guidi.dev.br/loteria/lotofacil
 
 ## Arquivos que devem ficar na raiz do repositorio
 
@@ -9,10 +13,9 @@ Este pacote esta pronto para subir no GitHub e publicar no Render.
 - Procfile
 - render.yaml
 - README.md
+- .gitignore
 
 ## Configuracao no Render
-
-Language: Python 3
 
 Root Directory: deixe em branco
 
@@ -24,19 +27,11 @@ gunicorn app:app
 
 ## Depois de publicar
 
-Abra o link do Render. A tela deve mostrar:
-
-{
-  "app": "Lotofacil + Facil",
-  "status": "online"
-}
-
-## Rotas principais
+Teste:
 
 /api/ultimo
 /api/concurso/3000
 /api/frequencias
-/api/gerar
 
 ## Importante
 
