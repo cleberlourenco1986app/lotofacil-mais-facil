@@ -13,6 +13,7 @@ TODAS_DEZENAS = set(range(1, 26))
 
 URL_CAIXA = "https://servicebus2.caixa.gov.br/portaldeloterias/api/lotofacil"
 URL_GUIDI_BASE = "https://api.guidi.dev.br/loteria/lotofacil"
+URL_HEROKU_BASE = "https://loteriascaixa-api.herokuapp.com/api/lotofacil"
 
 CACHE_HISTORICO = None
 CACHE_CRIADO_EM = 0
@@ -115,8 +116,27 @@ def baixar_concurso_caixa(numero=None):
 
 
 def baixar_concurso_guidi(numero=None):
-    sufixo = "ultimo" if numero is None else str(numero)
-    url = f"{URL_GUIDI_BASE}/{sufixo}"
+    sufixos = []
+    if numero is None:
+        sufixos = ["ultimo", "latest"]
+    else:
+        sufixos = [str(numero)]
+
+    ultimo_erro = None
+    for sufixo in sufixos:
+        try:
+            url = f"{URL_GUIDI_BASE}/{sufixo}"
+            dados = get_json(url)
+            return extrair_resultado(dados)
+        except Exception as erro:
+            ultimo_erro = erro
+
+    raise ultimo_erro
+
+
+def baixar_concurso_heroku(numero=None):
+    sufixo = "latest" if numero is None else str(numero)
+    url = f"{URL_HEROKU_BASE}/{sufixo}"
     dados = get_json(url)
     return extrair_resultado(dados)
 
@@ -127,6 +147,7 @@ def baixar_concurso(numero=None):
     for nome, funcao in [
         ("caixa", baixar_concurso_caixa),
         ("guidi", baixar_concurso_guidi),
+        ("heroku", baixar_concurso_heroku),
     ]:
         try:
             resultado = funcao(numero)
@@ -217,7 +238,7 @@ def inicio():
         "app": "Lotofacil + Facil",
         "status": "online",
         "mensagem": "Backend funcionando corretamente.",
-        "observacao": "Usa fonte alternativa quando a API da Caixa bloqueia o servidor.",
+        "observacao": "Usa fontes alternativas quando a API da Caixa bloqueia o servidor.",
         "rotas": [
             "/api/ultimo",
             "/api/concurso/3000",

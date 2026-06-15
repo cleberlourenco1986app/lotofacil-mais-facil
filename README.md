@@ -1,12 +1,16 @@
 # Lotofacil + Facil - Backend Render
 
-Versao corrigida para o erro 403 da Caixa no Render.
+Versao v3 com 3 fontes de resultado:
 
-O backend tenta consultar a API da Caixa primeiro.
-Se a Caixa bloquear o servidor com 403, ele usa a API alternativa:
-https://api.guidi.dev.br/loteria/lotofacil
+1. Caixa
+2. Guidi
+3. Loterias Caixa API Heroku
 
-## Arquivos que devem ficar na raiz do repositorio
+Se uma fonte falhar, o backend tenta a proxima.
+
+## Subir no GitHub
+
+Suba estes arquivos na raiz do repositorio:
 
 - app.py
 - requirements.txt
@@ -15,7 +19,7 @@ https://api.guidi.dev.br/loteria/lotofacil
 - README.md
 - .gitignore
 
-## Configuracao no Render
+## Render
 
 Root Directory: deixe em branco
 
@@ -25,15 +29,11 @@ pip install -r requirements.txt
 Start Command:
 gunicorn app:app
 
-## Depois de publicar
+Depois use:
+Manual Deploy > Clear build cache & deploy
 
-Teste:
+## Testes
 
 /api/ultimo
 /api/concurso/3000
 /api/frequencias
-
-## Importante
-
-Este app e uma ferramenta estatistica independente.
-Nao realiza apostas, nao vende boloes e nao garante resultados.
