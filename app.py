@@ -1,0 +1,228 @@
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from itertools import combinations
+from collections import Counter
+from math import comb
+import requests
+
+app = Flask(__name__)
+CORS(app)
+
+TODAS_DEZENAS = set(range(1, 26))
+URL_CAIXA = "https://servicebus2.caixa.gov.br/portaldeloterias/api/lotofacil"
+
+
+def formatar_dezenas(dezenas):
+    return [str(int(n)).zfill(2) for n in dezenas]
+
+
+def baixar_concurso(numero=None):
+    url = URL_CAIXA if numero is None else f"{URL_CAIXA}/{numero}"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    resposta = requests.get(url, headers=headers, timeout=25)
+    resposta.raise_for_status()
+    dados = resposta.json()
+
+    return {
+        "concurso": dados.get("numero"),
+        "data": dados.get("dataApuracao"),
+        "dezenas": [int(d) for d in dados.get("listaDezenas", [])]
+    }
+
+
+def carregar_historico():
+    ultimo = baixar_concurso()
+    ultimo_numero = int(ultimo["concurso"])
+
+    historico = []
+
+    for numero in range(1, ultimo_numero + 1):
+        try:
+            item = baixar_concurso(numero)
+            if len(item["dezenas"]) == 15:
+                historico.append(item)
+        except Exception:
+            continue
+
+    return historico
+
+
+def calcular_frequencias(historico):
+    contador = Counter()
+
+    for item in historico:
+        contador.update(item["dezenas"])
+
+    ranking = []
+
+    for dezena in range(1, 26):
+        ranking.append({
+            "dezena": str(dezena).zfill(2),
+            "quantidade": contador[dezena]
+        })
+
+    ranking.sort(key=lambda x: x["quantidade"], reverse=True)
+    return ranking
+
+
+def tem_sequencia_maior_que_4(jogo):
+    jogo = sorted(jogo)
+    atual = 1
+    maior = 1
+
+    for i in range(1, len(jogo)):
+        if jogo[i] == jogo[i - 1] + 1:
+            atual += 1
+            maior = max(maior, atual)
+        else:
+            atual = 1
+
+    return maior > 4
+
+
+def ja_fez_14_ou_15(jogo, historico):
+    jogo_set = set(jogo)
+
+    for item in historico:
+        sorteio = set(item["dezenas"])
+        acertos = len(jogo_set & sorteio)
+
+        if acertos >= 14:
+            return True
+
+    return False
+
+
+@app.route("/")
+def inicio():
+    return jsonify({
+        "app": "Lotofacil + Facil",
+        "status": "online",
+        "mensagem": "Backend funcionando corretamente.",
+        "rotas": [
+            "/api/ultimo",
+            "/api/concurso/3000",
+            "/api/frequencias",
+            "/api/gerar"
+        ]
+    })
+
+
+@app.route("/api/ultimo")
+def api_ultimo():
+    try:
+        resultado = baixar_concurso()
+        resultado["dezenas"] = formatar_dezenas(resultado["dezenas"])
+        return jsonify(resultado)
+    except Exception as erro:
+        return jsonify({"erro": str(erro)}), 500
+
+
+@app.route("/api/concurso/<int:numero>")
+def api_concurso(numero):
+    try:
+        resultado = baixar_concurso(numero)
+        resultado["dezenas"] = formatar_dezenas(resultado["dezenas"])
+        return jsonify(resultado)
+    except Exception as erro:
+        return jsonify({"erro": str(erro)}), 500
+
+
+@app.route("/api/frequencias")
+def api_frequencias():
+    try:
+        historico = carregar_historico()
+        ranking = calcular_frequencias(historico)
+        return jsonify({
+            "total_concursos": len(historico),
+            "ranking": ranking
+        })
+    except Exception as erro:
+        return jsonify({"erro": str(erro)}), 500
+
+
+@app.route("/api/gerar", methods=["POST"])
+def api_gerar():
+    try:
+        dados = request.get_json() or {}
+
+        fixos = [int(n) for n in dados.get("fixos", [])]
+        eliminados = [int(n) for n in dados.get("eliminados", [])]
+        quantidade = int(dados.get("quantidade", 10))
+
+        if quantidade <= 0:
+            return jsonify({"erro": "A quantidade de jogos precisa ser maior que zero."}), 400
+
+        if not 2 <= len(fixos) <= 6:
+            return jsonify({"erro": "Escolha de 2 a 6 numeros fixos."}), 400
+
+        if not 2 <= len(eliminados) <= 6:
+            return jsonify({"erro": "Escolha de 2 a 6 numeros eliminados."}), 400
+
+        if set(fixos) & set(eliminados):
+            return jsonify({"erro": "Um numero nao pode ser fixo e eliminado ao mesmo tempo."}), 400
+
+        if not set(fixos).issubset(TODAS_DEZENAS):
+            return jsonify({"erro": "Fixos devem estar entre 1 e 25."}), 400
+
+        if not set(eliminados).issubset(TODAS_DEZENAS):
+            return jsonify({"erro": "Eliminados devem estar entre 1 e 25."}), 400
+
+        historico = carregar_historico()
+        ranking = calcular_frequencias(historico)
+
+        frequencias = {
+            int(item["dezena"]): item["quantidade"]
+            for item in ranking
+        }
+
+        livres = sorted(TODAS_DEZENAS - set(fixos) - set(eliminados))
+        completar = 15 - len(fixos)
+
+        if completar > len(livres):
+            return jsonify({"erro": "Nao ha dezenas suficientes para completar o jogo."}), 400
+
+        total_bruto = comb(len(livres), completar)
+
+        aprovados = []
+        eliminados_sequencia = 0
+        eliminados_historico = 0
+
+        for complemento in combinations(livres, completar):
+            jogo = sorted(fixos + list(complemento))
+
+            if tem_sequencia_maior_que_4(jogo):
+                eliminados_sequencia += 1
+                continue
+
+            if ja_fez_14_ou_15(jogo, historico):
+                eliminados_historico += 1
+                continue
+
+            pontuacao = sum(frequencias.get(n, 0) for n in jogo)
+
+            aprovados.append({
+                "dezenas": formatar_dezenas(jogo),
+                "pontuacao": pontuacao
+            })
+
+        aprovados.sort(key=lambda x: x["pontuacao"], reverse=True)
+        selecionados = aprovados[:quantidade]
+
+        return jsonify({
+            "fixos": formatar_dezenas(fixos),
+            "eliminados": formatar_dezenas(eliminados),
+            "total_bruto": total_bruto,
+            "eliminados_por_sequencia": eliminados_sequencia,
+            "eliminados_por_historico": eliminados_historico,
+            "total_aprovados": len(aprovados),
+            "total_selecionados": len(selecionados),
+            "jogos": selecionados
+        })
+
+    except Exception as erro:
+        return jsonify({"erro": str(erro)}), 500
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
